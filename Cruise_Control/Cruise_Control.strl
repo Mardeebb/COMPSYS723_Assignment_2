@@ -1,12 +1,22 @@
 module Cruise_Control:
 input On, Off, Resume, Set, QuickDecel, QuickAccel;
-type CruiseState = OFF | ON | STDBY | DISABLE
 input Accel, Brake, Speed;
-output CruiseSpeed: float,
-ThrottleCmd: float;
+output CruiseSpeed: double;
+output ThrottleCmd: double;
 
-[
-loop 
-	await On
+% Cruise control state values:
+% OFF = 0, ON = 1, STDBY = 2, DISABLE = 3, REGULATE = 4
+
+var CruiseState: integer in
+
+%producer thread
+loop
+	await On;
+	emit CruiseSpeed(60.0);
+	emit ThrottleCmd(0.5);
 end loop
-]
+
+end var
+end module
+
+
