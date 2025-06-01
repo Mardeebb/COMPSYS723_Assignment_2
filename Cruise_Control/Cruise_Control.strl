@@ -1,22 +1,123 @@
 module Cruise_Control:
 input On, Off, Resume, Set, QuickDecel, QuickAccel;
-input Accel, Brake, Speed;
+input Accel: double;
+input Brake: double;
+input Speed: double;
 output CruiseSpeed: double;
 output ThrottleCmd: double;
+output CruiseStateOut: string;
 
 % Cruise control state values:
-% OFF = 0, ON = 1, STDBY = 2, DISABLE = 3, REGULATE = 4
+% OFF = 0, ON = 1, STDBY = 2, DISABLE = 3
 
-var CruiseState: integer in
+signal 
+ManageSpeed,
+UpdateCruiseSpeed: double,
+OffEvent
+in
+var 
+CruiseState:= 0 : integer, 
+SpeedMin:= 30.0: double,
+SpeedMax:= 150.0: double,
+SpeedInc:= 2.5: double,
+Kp:= 8.113: double,
+Ki:= 0.5: double,
+ThrottleSatMax:= 45: integer,
+PedalsMin:= 3.0: double
+in
 
-%producer thread
-loop
-	await On;
-	emit CruiseSpeed(60.0);
-	emit ThrottleCmd(0.5);
-end loop
 
+[
+	loop
+		present Off then
+			emit OffEvent;
+			CruiseState := 0;
+		end present;
+		% Handle OFF state
+		if CruiseState = 0 then
+			present 
+			case On do
+				CruiseState := 1;
+			end present;
+		elsif CruiseState = 1 then
+			emit ManageSpeed;
+			if  ?Accel > PedalsMin or ?Speed < SpeedMin or ?Speed > SpeedMax then
+				CruiseState := 3;
+			elsif ?Brake > PedalsMin then
+				CruiseState := 2;
+			end if;
+		elsif CruiseState = 2 then
+			emit ManageSpeed;
+			if ?Accel > PedalsMin or ?Speed < SpeedMin or ?Speed > SpeedMax then 
+				CruiseState := 3;
+			elsif ?Speed > SpeedMin or ?Speed < SpeedMax then
+				CruiseState := 1;
+			end if;
+		elsif CruiseState = 3 then 
+			emit ManageSpeed;
+			if ?Accel < PedalsMin and ?Speed >= SpeedMin and ?Speed <= SpeedMax then
+				CruiseState := 1;
+			end if;
+		end if;
+		
+		% Emit state every tick
+		if CruiseState = 0 then emit CruiseStateOut("OFF");
+		elsif CruiseState = 1 then emit CruiseStateOut("ON");
+		elsif CruiseState = 2 then emit CruiseStateOut("STDBY");
+		elsif CruiseState = 3 then emit CruiseStateOut("DISABLE");
+		elsif CruiseState = 4 then emit CruiseStateOut("REGULATE");
+		end if;
+		
+		pause;
+	end loop
+]
 end var
+||
+var 
+SpeedMin:= 30.0: double,
+SpeedMax:= 150.0: double,
+SpeedInc:= 2.5: double,
+CurrentCruiseSpeed:= 0.0: double
+in
+[
+	loop 
+	await ManageSpeed;
+			present 
+			case OffEvent do 
+				emit CruiseStateOut("OFF");
+			case Set do 
+				CurrentCruiseSpeed := ?Speed;
+				if CurrentCruiseSpeed > SpeedMax then
+					CurrentCruiseSpeed := SpeedMax;
+					emit CruiseSpeed(CurrentCruiseSpeed);
+				elsif CurrentCruiseSpeed < SpeedMin then
+					CurrentCruiseSpeed := SpeedMin;
+					emit CruiseSpeed(CurrentCruiseSpeed);
+				else
+					emit CruiseSpeed(CurrentCruiseSpeed);
+				end if;
+				
+			case QuickAccel do
+				if CurrentCruiseSpeed >= SpeedMax then
+					CurrentCruiseSpeed := SpeedMax;
+					emit CruiseSpeed(CurrentCruiseSpeed);
+				else
+					CurrentCruiseSpeed := CurrentCruiseSpeed + 2.0;
+					emit CruiseSpeed(CurrentCruiseSpeed);
+				end if;
+			case QuickDecel do
+				if CurrentCruiseSpeed <= SpeedMin then
+					CurrentCruiseSpeed := SpeedMin;
+					emit CruiseSpeed(CurrentCruiseSpeed);
+				else	
+					CurrentCruiseSpeed := CurrentCruiseSpeed - 2.0;
+					emit CruiseSpeed(CurrentCruiseSpeed);					
+				end if;
+			end present;
+	end loop
+]
+end var
+end signal
 end module
 
 
