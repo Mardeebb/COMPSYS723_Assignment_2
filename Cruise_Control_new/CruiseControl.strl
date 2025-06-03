@@ -1,6 +1,3 @@
-
-% Connvert floats to double for it to work %
-
 module CruiseControl:
 
 constant Zero : float;
@@ -8,19 +5,31 @@ constant SpeedMin : float;
 constant SpeedMax : float;
 constant SpeedInc : float;
 constant PedalsMin : float;
-    
+   
+% Inputs
 input Accel : float;
 input Brake : float;
 input Speed : float;
 input On, Off, Resume, Set, QuickDecel, QuickAccel;
 
+% Outputs
 output CruiseSpeed : float;
 output ThrottleCmd : float;
 output CruiseStateOut : string;
 
+% external functions
+function regulateThrottle(integer, float, float) : float;
+
 % Cruise control state values:
 % OFF = 0, ON = 1, STDBY = 2, DISABLE = 3
-signal CruiseControlState : integer in
+
+%{
+	CruiseControlState = Signal to communicate the state that the cruise control is in
+	CruiseSpeedSig = Signal to communicate the current cruise speed with the throttle regulator
+}%
+signal CruiseControlState : integer, 
+CruiseSpeedSig : float 
+in
 [
 
 % Controls what state we are in
@@ -29,6 +38,7 @@ var CruiseState:= 0 : integer in
 
 		if CruiseState = 0 then
 			emit CruiseSpeed(Zero);
+			emit CruiseControlState(0);
 			present 
 			case On do
 				CruiseState := 1;
@@ -89,12 +99,14 @@ end var
 ||
 % Controls the speed and cruise speed
 [
-var CurrentCruiseSpeed : float, 
+var CurrentCruiseSpeed := Zero : float, 
 OldCruiseSpeed := Zero : float 
 in
-loop
+	loop
 		await CruiseControlState;
-		if ?CruiseControlState = 1 then
+		if ?CruiseControlState = 0 then
+			emit CruiseSpeedSig(Zero);
+		elsif ?CruiseControlState = 1 then
 			present 
 			case Set do 
 				CurrentCruiseSpeed := ?Speed;
@@ -128,13 +140,27 @@ loop
 				emit CruiseSpeed(OldCruiseSpeed);
 			
 			end present;
+	
+			emit CruiseSpeedSig(CurrentCruiseSpeed);
+			
 		elsif ?CruiseControlState = 2 then
 			OldCruiseSpeed := CurrentCruiseSpeed;
 		elsif ?CruiseControlState = 3 then
 			OldCruiseSpeed := CurrentCruiseSpeed;
 		end if;
-end loop
-	end var
+	end loop
+end var
+]
+||
+[
+	loop
+		await CruiseSpeedSig;
+		if ?CruiseControlState = 1 then
+			emit ThrottleCmd(regulateThrottle(1, ?CruiseSpeedSig, ?Speed));
+		elsif ?CruiseControlState = 0 then
+			emit ThrottleCmd(regulateThrottle(0, ?CruiseSpeedSig, ?Speed));
+		end if;
+	end loop 
 ]
 end signal
 end module

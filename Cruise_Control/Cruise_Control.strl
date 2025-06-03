@@ -1,8 +1,7 @@
 
 % Connvert floats to double for it to work
 
-module Cruise_Control:
-    
+module Cruise_Control:s
     
 input Accel: float;
 input Brake: float;

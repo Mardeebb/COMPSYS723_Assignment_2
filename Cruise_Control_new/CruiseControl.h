@@ -5,4 +5,4 @@
 #define SpeedInc 2.50
 #define PedalsMin 3.00
 
-
+float regulateThrottle(int isGoingOn, float cruiseSpeed, float vehicleSpeed);
