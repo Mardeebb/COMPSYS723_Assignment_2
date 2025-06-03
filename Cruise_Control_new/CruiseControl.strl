@@ -1,0 +1,142 @@
+
+% Connvert floats to double for it to work %
+
+module CruiseControl:
+
+constant Zero : float;
+constant SpeedMin : float;
+constant SpeedMax : float;
+constant SpeedInc : float;
+constant PedalsMin : float;
+    
+input Accel : float;
+input Brake : float;
+input Speed : float;
+input On, Off, Resume, Set, QuickDecel, QuickAccel;
+
+output CruiseSpeed : float;
+output ThrottleCmd : float;
+output CruiseStateOut : string;
+
+% Cruise control state values:
+% OFF = 0, ON = 1, STDBY = 2, DISABLE = 3
+signal CruiseControlState : integer in
+[
+
+% Controls what state we are in
+var CruiseState:= 0 : integer in
+	loop
+
+		if CruiseState = 0 then
+			emit CruiseSpeed(Zero);
+			present 
+			case On do
+				CruiseState := 1;
+			end present;
+		elsif CruiseState = 1 then 
+			emit CruiseControlState(1);
+			
+			present
+			case Off do 
+				CruiseState := 0;
+				emit CruiseSpeed(Zero);
+			end present;
+			
+			if  ?Accel > PedalsMin or ?Speed < SpeedMin or ?Speed > SpeedMax then
+				CruiseState := 3;
+			elsif ?Brake > PedalsMin then
+				CruiseState := 2;
+			end if;
+
+		elsif CruiseState = 2 then
+			emit CruiseControlState(2);
+			present 
+			case Off do 
+				CruiseState := 0;
+				emit CruiseSpeed(Zero);
+			end present;
+			
+			if ?Accel > PedalsMin or ?Speed < SpeedMin or ?Speed > SpeedMax then 
+				CruiseState := 3;
+			elsif ?Speed > SpeedMin and ?Speed < SpeedMax then
+				CruiseState := 1;
+			end if;
+		elsif CruiseState = 3 then
+			emit CruiseControlState(3);
+			present
+			case Off do 
+				CruiseState := 0;
+				emit CruiseSpeed(Zero);
+			end present;
+		
+			if ?Accel < PedalsMin and ?Speed >= SpeedMin and ?Speed <= SpeedMax then
+				CruiseState := 1;
+			end if;
+			
+		end if;
+		
+		% Emit state every tick
+		if CruiseState = 0 then emit CruiseStateOut("OFF");
+		elsif CruiseState = 1 then emit CruiseStateOut("ON");
+		elsif CruiseState = 2 then emit CruiseStateOut("STDBY");
+		elsif CruiseState = 3 then emit CruiseStateOut("DISABLE");
+		end if;
+		
+		pause;
+	end loop
+end var
+]
+||
+% Controls the speed and cruise speed
+[
+var CurrentCruiseSpeed : float, 
+OldCruiseSpeed := Zero : float 
+in
+loop
+		await CruiseControlState;
+		if ?CruiseControlState = 1 then
+			present 
+			case Set do 
+				CurrentCruiseSpeed := ?Speed;
+				if CurrentCruiseSpeed > SpeedMax then
+					CurrentCruiseSpeed := SpeedMax;
+					emit CruiseSpeed(CurrentCruiseSpeed);
+				elsif CurrentCruiseSpeed < SpeedMin then
+					CurrentCruiseSpeed := SpeedMin;
+					emit CruiseSpeed(CurrentCruiseSpeed);
+				else
+					emit CruiseSpeed(CurrentCruiseSpeed);
+				end if;
+				
+			case QuickAccel do
+				if CurrentCruiseSpeed >= SpeedMax then
+					CurrentCruiseSpeed := SpeedMax;
+					emit CruiseSpeed(CurrentCruiseSpeed);
+				else
+					CurrentCruiseSpeed := CurrentCruiseSpeed + SpeedInc;
+					emit CruiseSpeed(CurrentCruiseSpeed);
+				end if;
+			case QuickDecel do
+				if CurrentCruiseSpeed <= SpeedMin then
+					CurrentCruiseSpeed := SpeedMin;
+					emit CruiseSpeed(CurrentCruiseSpeed);
+				else	
+					CurrentCruiseSpeed := CurrentCruiseSpeed - SpeedInc;
+					emit CruiseSpeed(CurrentCruiseSpeed);					
+				end if;
+			case Resume do 
+				emit CruiseSpeed(OldCruiseSpeed);
+			
+			end present;
+		elsif ?CruiseControlState = 2 then
+			OldCruiseSpeed := CurrentCruiseSpeed;
+		elsif ?CruiseControlState = 3 then
+			OldCruiseSpeed := CurrentCruiseSpeed;
+		end if;
+end loop
+	end var
+]
+end signal
+end module
+
+

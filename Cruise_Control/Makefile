@@ -64,29 +64,29 @@ endif
 %:   %.o
 
 ctype.o: ctype.c
-	@echo " *** C COMPILE XES/glibc-2.3.3 fix $^  --->  $@"
+	@echo " * C COMPILE XES/glibc-2.3.3 fix $^  --->  $@"
 	$(CC) $(CFLAGS) -c $< -o $@
 
 %.o: %.c
-	@echo " *** C COMPILE $^  --->  $@"
+	@echo " * C COMPILE $^  --->  $@"
 	$(CC) $(CFLAGS) -c $< -o $@
 
 %.c: %.strl %.h
-	@echo " *** Esterel COMPILE $<  --->   $@"
+	@echo " * Esterel COMPILE $<  --->   $@"
 	$(ESTEREL2C) $(EFLAGS) $<
 
 %: %.c %_data.o
 	$(MAKE) $*.o
-	@echo " *** C LINK $*.o  --->  $@"
+	@echo " * C LINK $*.o  --->  $@"
 	$(CC) $(LDFLAGS) $*.o $*_data.o -o $@
 
 %.xes: %.strl %.h $(XESCTYPEFIX) %_data.o
-	@echo " *** Esterel COMPILE $<  --->   $*.c"
+	@echo " * Esterel COMPILE $<  --->   $*.c"
 	$(ESTEREL2C) $(EFLAGS) $(EFLAGS4X) $<
-	@echo " *** C COMPILE $*.c  --->  $*.o"
+	@echo " * C COMPILE $*.c  --->  $*.o"
 	$(CC) $(CFLAGS) -c $*.c -o $*.o
 	rm -f $*.c
-	@echo " *** XES LINK $<  --->   $*.exe"
+	@echo " * XES LINK $<  --->   $*.exe"
 	$(XES) $(XESFLAGS) $*.o $*_data.o $(XESCTYPEFIX) -o $*
 	rm -f $*.o
 	rm -f $*_data.o
@@ -113,11 +113,10 @@ ctype.o: ctype.c
 
 
 %.h %_data.o:
-	@if [ ! -e $*_data.c ]; then echo " *** Create empty file  --->  $*_data.c"; touch $*_data.c; fi
+	@if [ ! -e $*_data.c ]; then echo " * Create empty file  --->  $*_data.c"; touch $*_data.c; fi
 	$(CC) $(CFLAGS) -c $*_data.c -o $*_data.o
 
 clean:
 	rm -f *.o *.exe *.xes *.xev *.blif
 	rm -f $(patsubst %.strl,%.c,$(wildcard *.strl))
-	rm -f $(patsubst %.strl,%,$(wildcard *.strl))
-
+	rm -f $(patsubst %.strl,%,$(wildcard *.strl))ildcard *.strl))

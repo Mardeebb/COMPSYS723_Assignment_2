@@ -1,4 +1,7 @@
 #include <stdbool.h>
+#include<stdio.h>
+#include<stdlib.h>
+#include "Cruise_Control.h"
 
 /*
 DESCRIPTION: Saturate the throttle command to limit the acceleration.
@@ -22,6 +25,22 @@ float saturateThrottle(float throttleIn, bool* saturate)
 		return throttleIn;
 	}
 }
+
+int saturateThrottleInt(int throttleIn, int saturate)
+{
+	float throttleInFloat = throttleIn/100;
+	bool saturatebool = saturate;
+	if (saturate == 0) {
+		saturatebool = 0;
+	} else {
+		saturatebool = 1;
+	}
+	
+	float output = saturateThrottle(throttleInFloat, *saturatebool)
+	output = output * 100;
+	return output;
+}
+
 
 /*
 DESCRIPTION: Saturate the throttle command to limit the acceleration.
@@ -48,4 +67,19 @@ float regulateThrottle(bool isGoingOn, float cruiseSpeed, float vehicleSpeed)
 	iterm = iterm + error;
 	float integralAction = KI * iterm;
 	return saturateThrottle(proportionalAction + integralAction, &saturate);
+}
+
+int regulateThrottleInt(int isGoingOn, int cruiseSpeed, int vehicleSpeed)
+{
+	float cruiseSpeedFloat = cruiseSpeed / 100;
+	float vehicleSpeedFloat = vehicleSpeed / 100;
+	bool isGoingOnBool;
+	if (isGoingOn == 0) {
+		isGoingBool = 0;
+	} else {
+		isGoingBool = 1;
+	}
+	float output = regulateThrottle(isGoingOnBool, cruiseSpeedFloat, vehicleSpeedFloat);
+	output = output * 100;
+	return output;
 }

@@ -1,12 +1,15 @@
 
+% Connvert floats to double for it to work
 
 module Cruise_Control:
+    
+    
+input Accel: float;
+input Brake: float;
+input Speed: float;
+output CruiseSpeed: float;
+output ThrottleCmd: float;
 input On, Off, Resume, Set, QuickDecel, QuickAccel;
-input Accel: double;
-input Brake: double;
-input Speed: double;
-output CruiseSpeed: double;
-output ThrottleCmd: double;
 output CruiseStateOut: string;
 
 % Cruise control state values:
@@ -14,15 +17,15 @@ output CruiseStateOut: string;
 
 var 
 CruiseState:= 0 : integer, 
-SpeedMin:= 30.0: double,
-SpeedMax:= 150.0: double,
-SpeedInc:= 2.5: double,
-Kp:= 8.113: double,
-Ki:= 0.5: double,
+SpeedMin:= 30.0: float,
+SpeedMax:= 150.0: float,
+SpeedInc:= 2.5: float,
+Kp:= 8.113: float,
+Ki:= 0.5: float,
 ThrottleSatMax:= 45: integer,
-CurrentCruiseSpeed:=0.0: double,
-OldCruiseSpeed:= 0.0: double,
-PedalsMin:= 3.0: double
+CurrentCruiseSpeed:=0.0: float,
+OldCruiseSpeed:= 0.0: float,
+PedalsMin:= 3.0: float
 in
 
 
@@ -64,7 +67,7 @@ in
 					CurrentCruiseSpeed := SpeedMax;
 					emit CruiseSpeed(CurrentCruiseSpeed);
 				else
-					CurrentCruiseSpeed := CurrentCruiseSpeed + 2.0;
+					CurrentCruiseSpeed := CurrentCruiseSpeed + SpeedInc;
 					emit CruiseSpeed(CurrentCruiseSpeed);
 				end if;
 			case QuickDecel do
@@ -72,7 +75,7 @@ in
 					CurrentCruiseSpeed := SpeedMin;
 					emit CruiseSpeed(CurrentCruiseSpeed);
 				else	
-					CurrentCruiseSpeed := CurrentCruiseSpeed - 2.0;
+					CurrentCruiseSpeed := CurrentCruiseSpeed - SpeedInc;
 					emit CruiseSpeed(CurrentCruiseSpeed);					
 				end if;
 			case Resume do 
