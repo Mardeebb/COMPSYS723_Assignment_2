@@ -152,12 +152,13 @@ in
 end var
 ]
 ||
+% Controls the regulation of the throttle
 [
 	loop
 		await CruiseSpeedSig;
 		if ?CruiseControlState = 1 then
 			emit ThrottleCmd(regulateThrottle(1, ?CruiseSpeedSig, ?Speed));
-		elsif ?CruiseControlState = 0 then
+		else
 			emit ThrottleCmd(regulateThrottle(0, ?CruiseSpeedSig, ?Speed));
 		end if;
 	end loop 
