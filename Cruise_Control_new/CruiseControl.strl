@@ -41,7 +41,7 @@ trap InitDone in
 end trap;
 [
 
-% Controls what state we are in
+% CruiseStateManager -  Controls the state of operation
 var CruiseState:= 1 : integer in
 	loop
 		if CruiseState = 1 then
@@ -104,7 +104,7 @@ var CruiseState:= 1 : integer in
 end var
 ]
 ||
-% Controls the speed and cruise speed
+% CruiseSpeedManager - Controls the cruise speed
 [
 var CurrentCruiseSpeed := Zero : float, 
 OldCruiseSpeed := Zero : float
@@ -208,7 +208,7 @@ in
 end var
 ]
 ||
-% Controls the regulation of the throttle
+% ThrottlerRegulator - Controls the regulation of the throttle
 [
 	loop
 	pause;
