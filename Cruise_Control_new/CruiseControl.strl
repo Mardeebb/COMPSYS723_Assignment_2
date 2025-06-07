@@ -208,7 +208,7 @@ in
 end var
 ]
 ||
-% ThrottlerRegulator - Controls the regulation of the throttle
+% ThrottleRegulator - Controls the regulation of the throttle
 [
 	loop
 	pause;
