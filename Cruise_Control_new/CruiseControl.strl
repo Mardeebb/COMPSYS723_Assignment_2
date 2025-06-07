@@ -212,12 +212,12 @@ end var
 [
 	loop
 	pause;
-		if ?CruiseControlState = 1 then
-			emit ThrottleCmd(?Accel);
-		elsif ((?CruiseControlState = 2) and (not pre(?CruiseControlState) = 2)) then
+		if ((?CruiseControlState = 2) and (not pre(?CruiseControlState) = 2)) then
 			emit ThrottleCmd(regulateThrottle(1, ?CruiseSpeedSig, ?Speed));
 		elsif ?CruiseControlState = 2 then
 			emit ThrottleCmd(regulateThrottle(0, ?CruiseSpeedSig, ?Speed));
+		elsif ?CruiseControlState = 1 then
+			emit TrhottleCmd(?Accel);
 		else
 			emit ThrottleCmd(?Accel);
 		end if;
